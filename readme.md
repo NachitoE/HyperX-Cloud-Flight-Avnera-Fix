@@ -44,7 +44,7 @@ The main idea is to **force the update software to recognize the bricked headpho
         
 2.  **Analyze the binary with dnSpy and write the modification**
     
-    -   Open the executable in **dnSpy** and locate through the assembly: 
+    -   Open the executable in **[dnSpy](https://github.com/dnSpy/dnSpy "dnSpy")** and locate through the assembly: 
     - `namespace: HyperXUpdater` --> `class: ShellViewModel` --> `method: Scan`
      - Identify the line that compares: `else if(list.Count  ==  2)`. Delete the "else". This is important as the next step will be tricking the installer into reading our own list of two devices.
     - Identify the line that compares: `else if (list.Count  ==  1)`

@@ -1,4 +1,4 @@
-﻿
+
 # 🎧HyperX Cloud Flight - Avnera AV6202 Fix🎧
 ## Description
 
@@ -28,7 +28,7 @@ After running the official firmware updater, the headphones:
 
 ## **Proposed Solution**
 
-The main idea is to **force the update software to recognize the headphones** as a compatible device and allow the firmware to be reinstalled correctly.
+The main idea is to **force the update software to recognize the bricked headphones/dongle** as a compatible device and allow the firmware to be reinstalled correctly.
 
 ### **General Steps**
 
@@ -39,47 +39,41 @@ The main idea is to **force the update software to recognize the headphones** as
         ```
         HyperX_Firmware_Updater_Cloud_Flight_3114.exe
         ```
+        It is important to get this version. Other versions will not work through this method. 
         Get it through your own means.
         
-2.  **Analyze the binary with dnSpy**
+2.  **Analyze the binary with dnSpy and write the modification**
     
     -   Open the executable in **dnSpy** and locate through the assembly: 
     - `namespace: HyperXUpdater` --> `class: ShellViewModel` --> `method: Scan`
-    
-    - Identify the line that compares: `list.Count  ==  1`
-    - Inside that if, there should be a comparison where it checks if the product name isn't `"Avnera"`
+     - Identify the line that compares: `else if(list.Count  ==  2)`. Delete the "else". This is important as the next step will be tricking the installer into reading our own list of two devices.
+    - Identify the line that compares: `else if (list.Count  ==  1)`
+    - Inside that if, there should be a comparison where it checks `if (list[0].product != "Avnera")`
     - Apply an else statement to that if, and write:
-`
-else  
-{  
-list[0].category  =  "Headset";  
-list[0].version  =  "3.1.1.3";  
-list[0].fwpath  =  "USBModule.firmware.hxflight.flight_client_24C256B.ef";  
-IO.HXDeviceInfo  hxdeviceInfo  =  new  IO.HXDeviceInfo("Cloud Flight",  "0951",  "1723",  "Unknown",  "3.1.1.4",  "Dongle?",  "USBModule.firmware.hxflight.flight_host_45PE10.ff");  
-IO.HXDeviceInfo  hxdeviceInfo2  =  new  IO.HXDeviceInfo("Cloud Flight",  "170D",  "0101",  "Unknown",  "3.1.1.4",  "Headset?",  "USBModule.firmware.hxflight.flight_client_24C256B.ef");  
-list.Clear();  
-list.Add(hxdeviceInfo);  
-list.Add(hxdeviceInfo2);  
-}`
-        
+
+```csharp
+else
+{
+    IO.HXDeviceInfo hxdeviceInfo = new IO.HXDeviceInfo("Cloud Flight", "DONGLEVID", "DONGLEPID", "Unknown", "3.1.1.4", "Dongle?", "DONGLEFIRMWARE");
+    IO.HXDeviceInfo hxdeviceInfo2 = new IO.HXDeviceInfo("Cloud Flight", "HEADSETVID", "HEADSEPID", "Unknown", "3.1.1.4", "Headset?", "HEADSETFIRMWARE");
+    list.Clear();
+    list.Add(hxdeviceInfo);
+    list.Add(hxdeviceInfo2);
+}
+```
 3.  **Modify device detection**
     
-    -   Within the update software's code, locate the section that handles the supported hardware list.
-        
-    -   Add a new entry to force compatibility with the following hardware:
-        
-        -   **VID:**  `0x170D`
-            
-        -   **PID:**  `0x0101`
-            
-    -   Associate the correct firmware with these values so that the software recognizes them.
-        
-4.  **Save the changes and run the updater**
+    -   In the previous step you wrote an else, complete `DONGLEVID`, `DONGLEPID`, `HEADSETVID`, `HEADSEPID` with your respective usb PID and VIDS.
+    - Search in dnSpy "firmware.hxflight". You'll find a method that implements several strings with the firmware path needed. Complete `DONGLEFIRMWARE`and `HEADSETFIRMWARE` with the respective firmware of each device.
+4.  **Fixing only one of the devices**
     
-    -   Once the device detection is modified, save the executable and run it again.
+    It's highly possible that you only have bricked one of the devices. In my case it was the headset. What you have to do next is to search in the same `ShellViewModel`class that we were writing on and detect the method that updates the device that we DON'T want to update. 
+    Ex. If your headset is detected as Avnera AV6202, search for `UpdateDongle`and replace the method implementation with:
+     `await  Task.CompletedTask;`
+     This will make so the method is completely ignored of the update process, so it will skip it.
         
-    -   If the modification was successful, the program should recognize the headphones and allow firmware reinstallation.
-        
+## Force Installing the firmware ##
+As you compiled and ran the modified software., it will give you the option to update. In my own experience it always throws an error at the end, but it worked to fix my headphones.
 
 ## **Final Considerations**
 
@@ -87,7 +81,7 @@ list.Add(hxdeviceInfo2);
     
 -   It is recommended to back up the original files before making any changes.
     
--   If the device is still not recognized, other factors may need to be checked, such as USB drivers or internal memory failures in the headphones.
+-   I don't/won't provide support for this process, as it is pretty straightforward if you have the necessary knowledge. 
     
 
 ## **Disclaimer**

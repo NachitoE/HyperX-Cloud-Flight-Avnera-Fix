@@ -19,7 +19,7 @@ This tutorial aims to provide a guide for recovering **HyperX Cloud Flight** bri
 
 After running the official firmware updater, the headphones:
 
--   Stop getting detected as "HyperX Cloud Flight"and essentially, brick.
+-   Stop getting detected as **HyperX Cloud Flight** and essentially, brick.
     
 -   They register as **Avnera AV6202**.
     
